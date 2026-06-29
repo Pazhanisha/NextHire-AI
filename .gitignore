@@ -1,0 +1,32 @@
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Backend
+backend/venv/
+backend/__pycache__/
+backend/**/*.pyc
+
+# Environment
+.env
+backend/.env
+frontend/.env
+
+# Database
+*.db
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+# Uploads
+backend/uploads/
+frontend_replit/
+backend/venv/
+backend/__pycache__/
+backend/*.db
+backend/uploads/
+node_modules/
+.env
