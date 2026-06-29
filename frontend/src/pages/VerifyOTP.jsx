@@ -1,5 +1,6 @@
 import {useState} from "react";
 import {useNavigate} from "react-router-dom";
+import API from "@/api";
 
 
 export default function VerifyOTP(){
@@ -7,38 +8,47 @@ export default function VerifyOTP(){
 
 const [otp,setOtp]=useState("");
 
+const [loading,setLoading]=useState(false);
+
 const navigate=useNavigate();
 
 
-const verify=async()=>{
-
-
-const email =
-localStorage.getItem("email");
 
 
 
-const res = await fetch(
+const verify = async()=>{
 
-"http://localhost:8000/auth/verify",
+
+const email = localStorage.getItem("email");
+
+
+
+if(!otp){
+
+alert("Enter OTP");
+
+return;
+
+}
+
+
+
+try{
+
+
+setLoading(true);
+
+
+
+const res = await API.post(
+
+"/auth/verify",
 
 {
-
-method:"POST",
-
-headers:{
-
-"Content-Type":"application/json"
-
-},
-
-body:JSON.stringify({
 
 email,
 
 otp
-
-})
 
 }
 
@@ -46,29 +56,115 @@ otp
 
 
 
-const data=await res.json();
 
 
-console.log(data);
+console.log(res.data);
 
 
-if(res.ok){
+
+
+// save user details
+
+if(res.data.user){
+
+
+localStorage.setItem(
+
+"user",
+
+JSON.stringify(res.data.user)
+
+);
+
+
+}
+
+
+
+
+
+if(res.data.token){
+
+
+localStorage.setItem(
+
+"token",
+
+res.data.token
+
+);
+
+}
+
+
+
+
 
 navigate("/dashboard");
 
+
+
+
+
 }
+
+
+catch(err){
+
+
+console.log(err);
+
+
+alert(
+
+err.response?.data?.message ||
+
+"OTP verification failed"
+
+);
+
+
+}
+
+
+finally{
+
+
+setLoading(false);
+
+
+}
+
 
 
 };
 
 
 
+
+
+
+
+
 return(
+
 
 <div className="min-h-screen flex items-center justify-center">
 
 
-<div className="p-8 rounded-3xl bg-white/5 w-96">
+<div
+
+className="p-8 rounded-3xl w-96"
+
+style={{
+
+background:"rgba(255,255,255,.05)",
+
+border:"1px solid rgba(255,255,255,.1)"
+
+}}
+
+>
 
 
 <h1 className="text-white text-3xl font-bold">
@@ -78,44 +174,95 @@ Verify OTP 🔐
 </h1>
 
 
+
+<p className="text-slate-400 mt-2">
+
+Enter the OTP sent to your email
+
+</p>
+
+
+
+
+
 <input
 
-className="mt-6 w-full p-3 rounded-xl bg-white/10 text-white"
+
+value={otp}
+
+
+onChange={(e)=>setOtp(e.target.value)}
+
+
+className="mt-6 w-full p-3 rounded-xl bg-white/10 text-white outline-none"
+
 
 placeholder="Enter OTP"
 
-onChange={(e)=>setOtp(e.target.value)}
+
 
 />
 
 
+
+
+
 <button
+
 
 onClick={verify}
 
-className="mt-5 w-full py-3 rounded-xl text-white"
+
+disabled={loading}
+
+
+className="mt-5 w-full py-3 rounded-xl text-white font-semibold"
+
 
 style={{
 
+
 background:
+
 "linear-gradient(135deg,#10b981,#2563eb)"
+
 
 }}
 
+
+
 >
 
-Verify
+
+{
+
+
+loading
+
+?
+
+"Verifying..."
+
+:
+
+"Verify OTP"
+
+}
+
+
 
 </button>
 
 
 
+
+
 </div>
 
 
 </div>
+
 
 )
-
 
 }

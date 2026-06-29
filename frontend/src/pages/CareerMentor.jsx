@@ -1,175 +1,50 @@
 import { motion } from "framer-motion";
 
 import {
-  Brain,
-  Rocket,
-  Target,
-  TrendingUp,
-  Send,
-  Sparkles
-}from "lucide-react";
+Brain,
+Rocket,
+Target,
+TrendingUp,
+Send,
+Sparkles
+} from "lucide-react";
 
-import { useState, useEffect } from "react";
-import axios from "axios";
+import {useState,useEffect} from "react";
+import API from "@/api";
 
 
 
 export default function CareerMentor(){
 
 
-const [loading,setLoading] = useState(false);
+const [loading,setLoading]=useState(false);
 
-const [data,setData] = useState(null);
+const [data,setData]=useState(null);
 
+const [message,setMessage]=useState("");
 
-const [message,setMessage] = useState("");
+const [chat,setChat]=useState([]);
 
-const [chat,setChat] = useState([]);
-const [user,setUser] = useState(null);
 
-const [skills,setSkills] = useState([]);
-const [resumeData,setResumeData] = useState({});
 
-const [interviewScore,setInterviewScore] = useState(0);
-useEffect(()=>{
 
 
-const storedUser = localStorage.getItem("user");
-
-
-if(storedUser){
-
-setUser(
-JSON.parse(storedUser)
-);
-
-}
-
-
-
-loadUserData();
-
-
-},[]);
-
-
-
-
-const loadUserData = async()=>{
-
-
-try{
-
-
-// get skills
-
-const skillRes = await axios.get(
-
-"http://localhost:8000/skills/"
-
-);
-
-
-setSkills(
-
-skillRes.data.map(
-
-(s)=>s.name
-
-)
-
-);
-
-
-
-
-
-// get interview history
-
-const interviewRes = await axios.get(
-
-"http://localhost:8000/interview/history"
-
-);
-
-
-
-if(interviewRes.data.length > 0){
-
-
-const latest =
-
-interviewRes.data[
-
-interviewRes.data.length-1
-
-];
-
-
-
-setInterviewScore(
-
-latest.score
-
-);
-
-
-}
-
-
-
-
-}
-
-catch(err){
-
-console.log(err);
-
-}
-
-
-};
-
-
-
-
-
-// AI CAREER RECOMMENDATION
+// GENERATE ROADMAP
 
 const getAdvice = async()=>{
 
 
+try{
+
 setLoading(true);
 
 
-try{
-
-
-const res = await fetch(
-
-"http://localhost:8000/recommendation/generate",
-
-{
-
-method:"POST",
-
-headers:{
-
-"Content-Type":"application/json"
-
-},
-
-
-}
-
+const res = await API.post(
+"/recommendation/generate"
 );
 
 
-
-const result = await res.json();
-
-
-setData(result.data);
+setData(res.data.data);
 
 
 
@@ -184,7 +59,11 @@ alert("Recommendation failed");
 }
 
 
+finally{
+
 setLoading(false);
+
+}
 
 
 };
@@ -194,7 +73,7 @@ setLoading(false);
 
 
 
-// AI CHAT
+// CHAT
 
 const sendMessage = async()=>{
 
@@ -203,23 +82,21 @@ if(!message) return;
 
 
 
+const userText = message;
+
+
+
 setChat(prev=>[
 
 ...prev,
 
 {
-
 role:"user",
-
-text:message
-
+text:userText
 }
 
 ]);
 
-
-
-const userMessage = message;
 
 
 setMessage("");
@@ -229,61 +106,17 @@ setMessage("");
 try{
 
 
-const res = await fetch(
+const res = await API.post(
 
-"http://localhost:8000/mentor/chat",
+"/mentor/chat",
 
 {
 
-method:"POST",
-
-headers:{
-
-"Content-Type":"application/json"
-
-},
-
-body:JSON.stringify({
-
-message:userMessage
-
-})
+message:userText
 
 }
 
 );
-const resumeRes = await axios.get(
-
-"http://localhost:8000/resume/history"
-
-);
-
-
-if(resumeRes.data.length > 0){
-
-
-const latestResume =
-
-resumeRes.data[
-
-resumeRes.data.length - 1
-
-];
-
-
-
-setResumeData(
-
-latestResume
-
-);
-
-
-}
-
-
-
-const result = await res.json();
 
 
 
@@ -295,12 +128,11 @@ setChat(prev=>[
 
 role:"ai",
 
-text:result.reply
+text:res.data.reply
 
 }
 
 ]);
-
 
 
 }
@@ -314,6 +146,8 @@ console.log(err);
 
 
 };
+
+
 
 
 
@@ -331,9 +165,15 @@ return(
 
 <motion.div
 
-initial={{opacity:0,y:20}}
+initial={{
+opacity:0,
+y:20
+}}
 
-animate={{opacity:1,y:0}}
+animate={{
+opacity:1,
+y:0
+}}
 
 >
 
@@ -361,6 +201,7 @@ Your personal AI career coach
 
 
 
+
 <div
 
 className="p-8 rounded-3xl"
@@ -375,14 +216,15 @@ background:
 >
 
 
-<div className="flex items-center gap-4">
+<div className="flex gap-4 items-center">
 
 
-<div className="p-4 bg-purple-600 rounded-2xl">
+<div className="p-4 rounded-2xl bg-purple-600">
 
 <Brain className="text-white"/>
 
 </div>
+
 
 
 <div>
@@ -404,7 +246,9 @@ NextHire AI Mentor
 </div>
 
 
+
 </div>
+
 
 
 
@@ -413,7 +257,7 @@ NextHire AI Mentor
 
 onClick={getAdvice}
 
-className="mt-6 px-8 py-3 rounded-xl text-white flex gap-2 items-center"
+className="mt-6 px-8 py-3 rounded-xl text-white flex gap-2"
 
 style={{
 
@@ -434,16 +278,18 @@ loading
 
 ?
 
-"Analyzing..."
+"Generating..."
 
 :
 
-"Generate Career Plan 🚀"
+"Generate Career Roadmap 🚀"
 
 }
 
 
+
 </button>
+
 
 
 
@@ -461,9 +307,13 @@ loading
 
 data &&
 
+<div className="space-y-6">
 
-<div className="grid md:grid-cols-3 gap-6">
 
+
+
+
+<div className="grid md:grid-cols-2 gap-5">
 
 
 <Card
@@ -475,8 +325,6 @@ title="Recommended Role"
 value={data.recommended_role}
 
 />
-
-
 
 
 
@@ -492,13 +340,151 @@ value={data.skill_gap}
 
 
 
+</div>
 
 
-<Roadmap roadmap={data.roadmap}/>
+
+
+
+
+<div
+
+className="p-8 rounded-3xl"
+
+style={{
+
+background:"rgba(255,255,255,.05)",
+
+border:"1px solid rgba(255,255,255,.1)"
+
+}}
+
+>
+
+
+<div className="flex gap-3 items-center mb-6">
+
+
+<Rocket className="text-purple-400"/>
+
+
+<h2 className="text-white text-2xl font-bold">
+
+AI Career Roadmap 🚀
+
+</h2>
 
 
 </div>
 
+
+
+
+
+<div className="space-y-5">
+
+
+{
+
+data.roadmap
+
+.split("Week")
+
+.filter(Boolean)
+
+.map((item,index)=>(
+
+
+<motion.div
+
+key={index}
+
+initial={{
+opacity:0,
+x:-20
+}}
+
+animate={{
+opacity:1,
+x:0
+}}
+
+className="p-5 rounded-2xl"
+
+style={{
+
+background:
+
+"linear-gradient(135deg,rgba(124,58,237,.15),rgba(37,99,235,.15))"
+
+}}
+
+>
+
+
+<h3 className="text-purple-300 font-bold">
+
+Week {index+1}
+
+</h3>
+
+
+
+<p className="text-slate-300 mt-2">
+
+{item}
+
+</p>
+
+
+
+
+<div className="h-2 bg-white/10 rounded-full mt-4">
+
+
+<div
+
+className="h-2 rounded-full"
+
+style={{
+
+width:`${(index+1)*25}%`,
+
+background:
+
+"linear-gradient(90deg,#7c3aed,#2563eb)"
+
+}}
+
+/>
+
+
+</div>
+
+
+
+
+</motion.div>
+
+
+))
+
+
+}
+
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+</div>
 
 
 }
@@ -511,23 +497,18 @@ value={data.skill_gap}
 
 
 
-{/* AI CHAT */}
-
-
-
 <div
 
 className="p-8 rounded-3xl"
 
 style={{
 
-background:"rgba(255,255,255,.05)",
-
-border:"1px solid rgba(255,255,255,.08)"
+background:"rgba(255,255,255,.05)"
 
 }}
 
 >
+
 
 
 <h2 className="text-white text-2xl font-bold mb-5">
@@ -539,8 +520,7 @@ border:"1px solid rgba(255,255,255,.08)"
 
 
 
-
-<div className="h-80 overflow-y-auto space-y-4 mb-5">
+<div className="h-80 overflow-y-auto space-y-4">
 
 
 {
@@ -553,17 +533,11 @@ chat.map((c,i)=>(
 key={i}
 
 className={
-
 c.role==="user"
-
 ?
-
 "text-right"
-
 :
-
 "text-left"
-
 }
 
 >
@@ -571,13 +545,11 @@ c.role==="user"
 
 <span
 
-className="inline-block px-4 py-3 rounded-xl text-white"
+className="inline-block p-3 rounded-xl text-white"
 
 style={{
 
-
 background:
-
 
 c.role==="user"
 
@@ -589,7 +561,6 @@ c.role==="user"
 
 "rgba(124,58,237,.5)"
 
-
 }}
 
 >
@@ -599,7 +570,6 @@ c.role==="user"
 
 
 </span>
-
 
 
 </div>
@@ -620,30 +590,21 @@ c.role==="user"
 
 
 
-<div className="flex gap-3">
+<div className="flex gap-3 mt-5">
 
 
 <input
 
-
 value={message}
 
+onChange={(e)=>setMessage(e.target.value)}
 
-onChange={(e)=>
+placeholder="Ask career question..."
 
-setMessage(e.target.value)
-
-}
-
-
-placeholder="Ask your career question..."
-
-
-className="flex-1 p-3 rounded-xl bg-white/10 text-white outline-none"
-
-
+className="flex-1 p-3 rounded-xl bg-white/10 text-white"
 
 />
+
 
 
 
@@ -676,7 +637,10 @@ background:
 
 
 
+
 </div>
+
+
 
 
 
@@ -688,6 +652,8 @@ background:
 )
 
 }
+
+
 
 
 
@@ -707,7 +673,7 @@ style={{
 
 background:"rgba(255,255,255,.05)",
 
-border:"1px solid rgba(255,255,255,.08)"
+border:"1px solid rgba(255,255,255,.1)"
 
 }}
 
@@ -728,163 +694,12 @@ border:"1px solid rgba(255,255,255,.08)"
 </p>
 
 
-<h2 className="text-white text-xl font-bold mt-2">
+<h2 className="text-white font-bold text-xl mt-2">
 
 {value}
 
 </h2>
 
-
-
-</div>
-
-
-)
-
-
-}
-function Roadmap({roadmap}){
-
-
-const weeks = roadmap
-.split("Week")
-.filter(Boolean)
-.map(item=>"Week"+item);
-
-
-
-return(
-
-<div
-
-className="p-6 rounded-3xl md:col-span-3"
-
-style={{
-
-background:"rgba(255,255,255,0.05)",
-
-border:"1px solid rgba(255,255,255,0.1)"
-
-}}
-
->
-
-
-<div className="flex items-center gap-3 mb-6">
-
-
-<div className="p-3 rounded-xl bg-purple-600">
-
-<Rocket className="text-white"/>
-
-</div>
-
-
-<h2 className="text-white text-2xl font-bold">
-
-AI Career Roadmap 🚀
-
-</h2>
-
-
-</div>
-
-
-
-
-
-<div className="space-y-4">
-
-
-{
-
-weeks.map((week,index)=>(
-
-
-<motion.div
-
-key={index}
-
-initial={{
-opacity:0,
-x:-20
-}}
-
-animate={{
-opacity:1,
-x:0
-}}
-
-transition={{
-delay:index*0.1
-}}
-
-className="p-5 rounded-2xl"
-
-style={{
-
-background:
-
-"linear-gradient(135deg,rgba(124,58,237,.15),rgba(37,99,235,.15))",
-
-border:
-
-"1px solid rgba(139,92,246,.25)"
-
-}}
-
->
-
-
-<h3 className="text-purple-300 font-bold text-lg">
-
-{week.split(":")[0]}
-
-</h3>
-
-
-<p className="text-slate-300 mt-2">
-
-{week.split(":")[1]}
-
-</p>
-
-
-<div className="mt-4 h-2 rounded-full bg-white/10">
-
-
-<div
-
-className="h-2 rounded-full"
-
-style={{
-
-width:`${(index+1)*25}%`,
-
-background:
-
-"linear-gradient(90deg,#7c3aed,#2563eb)"
-
-}}
-
-
-/>
-
-
-</div>
-
-
-
-</motion.div>
-
-
-))
-
-
-}
-
-
-</div>
 
 
 </div>

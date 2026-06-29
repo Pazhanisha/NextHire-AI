@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import axios from "axios";
-import { FileText } from "lucide-react";
+import { FileText, Calendar, Sparkles } from "lucide-react";
+import API from "@/api";
 
 
 export default function ResumeHistory(){
 
 
-const [history,setHistory] = useState([]);
+const [history,setHistory]=useState([]);
+
+const [loading,setLoading]=useState(true);
+
+
 
 
 
@@ -21,15 +25,17 @@ fetchHistory();
 
 
 
+
+
 const fetchHistory = async()=>{
 
 
 try{
 
 
-const res = await axios.get(
+const res = await API.get(
 
-"http://localhost:8000/resume-history"
+"/resume/history"
 
 );
 
@@ -40,11 +46,20 @@ setHistory(res.data);
 
 }
 
+
 catch(error){
 
 console.log(error);
 
 }
+
+
+finally{
+
+setLoading(false);
+
+}
+
 
 
 };
@@ -53,17 +68,53 @@ console.log(error);
 
 
 
-return (
+
+
+
+if(loading){
+
+
+return(
+
+<div className="text-white p-8">
+
+Loading resume history...
+
+</div>
+
+)
+
+}
+
+
+
+
+
+return(
 
 
 <div className="max-w-6xl mx-auto space-y-8">
 
 
 
-<div>
 
 
-<h1 className="text-3xl font-bold text-white">
+<motion.div
+
+initial={{
+opacity:0,
+y:20
+}}
+
+animate={{
+opacity:1,
+y:0
+}}
+
+>
+
+
+<h1 className="text-4xl font-bold text-white">
 
 Resume History 📄
 
@@ -72,12 +123,15 @@ Resume History 📄
 
 <p className="text-slate-400 mt-2">
 
-Previous AI resume analyses
+Your previous AI resume analysis reports
 
 </p>
 
 
-</div>
+</motion.div>
+
+
+
 
 
 
@@ -86,69 +140,86 @@ Previous AI resume analyses
 
 {
 
-history.length === 0 ?
+history.length===0 ?
 
 
 
 <div
 
-className="p-10 rounded-2xl text-center"
+className="p-10 rounded-3xl text-center"
 
 style={{
 
-background:"rgba(255,255,255,0.05)",
+background:"rgba(255,255,255,.05)",
 
-border:"1px solid rgba(255,255,255,0.1)"
+border:"1px solid rgba(255,255,255,.1)"
 
 }}
 
 >
 
 
-<FileText className="mx-auto text-purple-400 mb-4"/>
+<FileText
+
+size={45}
+
+className="mx-auto text-purple-400 mb-4"
+
+/>
 
 
 <p className="text-slate-400">
 
-No resume analysis found
+No resume analysis available yet
 
 </p>
 
 
 </div>
+
 
 
 
 
 :
 
+<div className="space-y-6">
 
 
-history.map((item)=>(
+{
+
+history.map((item,index)=>(
+
 
 
 <motion.div
 
 
-key={item.id}
+key={item.id || index}
 
 
-initial={{opacity:0,y:20}}
+initial={{
+opacity:0,
+y:20
+}}
+
+animate={{
+opacity:1,
+y:0
+}}
 
 
-animate={{opacity:1,y:0}}
 
-
-
-className="p-6 rounded-2xl"
+className="p-8 rounded-3xl"
 
 
 style={{
 
 
-background:"rgba(255,255,255,0.05)",
+background:"rgba(255,255,255,.05)",
 
-border:"1px solid rgba(139,92,246,0.25)"
+border:"1px solid rgba(139,92,246,.25)"
+
 
 }}
 
@@ -158,49 +229,31 @@ border:"1px solid rgba(139,92,246,0.25)"
 
 
 
-<h2 className="text-white font-bold text-xl mb-4">
 
-Resume Analysis #{item.id}
+<div className="flex justify-between items-center mb-6">
+
+
+<h2 className="text-white text-xl font-bold">
+
+
+Resume Analysis #{index+1}
+
 
 </h2>
 
 
 
 
-
-<div className="grid md:grid-cols-3 gap-4">
-
+<div className="flex gap-2 text-slate-400 text-sm">
 
 
-<Box
-
-title="Resume Score"
-
-value={`${item.analysis?.score || 0}%`}
-
-/>
+<Calendar size={16}/>
 
 
+{item.created_at || "Recent"}
 
 
-<Box
-
-title="Strength"
-
-value={item.analysis?.strength || "No data"}
-
-/>
-
-
-
-
-<Box
-
-title="Improvement"
-
-value={item.analysis?.improvement || "No data"}
-
-/>
+</div>
 
 
 
@@ -210,25 +263,95 @@ value={item.analysis?.improvement || "No data"}
 
 
 
-<div className="mt-5">
 
 
-<p className="text-slate-400 text-sm">
+
+<div className="grid md:grid-cols-3 gap-5">
+
+
+
+<Card
+
+title="Resume Score"
+
+value={`${item.analysis?.score || item.score || 0}%`}
+
+/>
+
+
+
+
+<Card
+
+title="Strength"
+
+value={
+item.analysis?.strength ||
+"Good profile foundation"
+}
+
+/>
+
+
+
+
+<Card
+
+title="Improvement"
+
+value={
+item.analysis?.improvement ||
+"Keep improving skills"
+}
+
+/>
+
+
+
+
+</div>
+
+
+
+
+
+
+
+<div className="mt-6">
+
+
+<div className="flex items-center gap-2 text-purple-400">
+
+<Sparkles size={18}/>
+
+<p>
 
 AI Feedback
 
 </p>
 
+</div>
 
-<p className="text-white mt-2">
 
-{item.analysis?.feedback}
+
+
+<p className="text-white mt-3">
+
+{
+
+item.analysis?.feedback ||
+
+"No feedback available"
+
+}
+
 
 </p>
 
 
 
 </div>
+
 
 
 
@@ -248,8 +371,15 @@ AI Feedback
 </div>
 
 
-)
 
+}
+
+
+
+</div>
+
+
+)
 
 }
 
@@ -258,7 +388,10 @@ AI Feedback
 
 
 
-function Box({title,value}){
+
+
+
+function Card({title,value}){
 
 
 return(
@@ -266,11 +399,13 @@ return(
 
 <div
 
-className="p-4 rounded-xl"
+className="p-5 rounded-2xl"
 
 style={{
 
-background:"rgba(255,255,255,0.04)"
+background:"rgba(255,255,255,.04)",
+
+border:"1px solid rgba(255,255,255,.08)"
 
 }}
 
@@ -285,7 +420,7 @@ background:"rgba(255,255,255,0.04)"
 
 
 
-<h3 className="text-white text-lg font-bold mt-2">
+<h3 className="text-white font-bold mt-3">
 
 {value}
 
@@ -297,5 +432,6 @@ background:"rgba(255,255,255,0.04)"
 
 
 )
+
 
 }

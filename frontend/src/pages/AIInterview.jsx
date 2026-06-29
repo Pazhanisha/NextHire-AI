@@ -1,18 +1,24 @@
 import { Mic, Sparkles, Play, Brain } from "lucide-react";
 import { useState } from "react";
+import API from "@/api";
 
 
 export default function AIInterview(){
 
 const [started,setStarted] = useState(false);
+
 const [role,setRole] = useState("");
+
 const [questions,setQuestions] = useState([]);
+
 const [current,setCurrent] = useState(0);
 
 const [answer,setAnswer] = useState("");
+
 const [listening,setListening] = useState(false);
 
 const [feedback,setFeedback] = useState(null);
+
 const [loading,setLoading] = useState(false);
 
 const [completed,setCompleted] = useState(false);
@@ -28,38 +34,36 @@ const startInterview = async()=>{
 if(!role){
 
 alert("Select interview type");
+
 return;
 
 }
 
 
-const res = await fetch(
 
-"http://localhost:8000/interview/start",
+try{
+
+
+const res = await API.post(
+
+"/interview/start",
 
 {
 
-method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify({
-role
-})
+role:role
 
 }
 
 );
 
 
-const data = await res.json();
 
+const q = res.data.questions
 
-const q = data.questions
 .split("\n")
+
 .filter(q=>q.trim());
+
 
 
 setQuestions(q);
@@ -67,19 +71,36 @@ setQuestions(q);
 setStarted(true);
 
 
+
+}
+
+catch(err){
+
+console.log(err);
+
+alert("Interview start failed");
+
+}
+
+
+
 };
 
 
 
 
-// VOICE
+
+// VOICE INPUT
 
 const startVoice = ()=>{
 
 
 const SpeechRecognition =
+
 window.SpeechRecognition ||
+
 window.webkitSpeechRecognition;
+
 
 
 if(!SpeechRecognition){
@@ -89,6 +110,7 @@ alert("Browser not supported");
 return;
 
 }
+
 
 
 const recognition = new SpeechRecognition();
@@ -101,11 +123,13 @@ recognition.interimResults=true;
 recognition.lang="en-US";
 
 
+
 recognition.onstart=()=>{
 
 setListening(true);
 
 };
+
 
 
 recognition.onresult=(event)=>{
@@ -115,12 +139,18 @@ let text="";
 
 
 for(
+
 let i=event.resultIndex;
+
 i<event.results.length;
+
 i++
+
 ){
 
+
 text += event.results[i][0].transcript;
+
 
 }
 
@@ -149,7 +179,9 @@ recognition.start();
 
 
 
-// SUBMIT ANSWER
+
+// ANALYZE ANSWER
+
 
 const submitAnswer = async()=>{
 
@@ -163,6 +195,7 @@ return;
 }
 
 
+
 try{
 
 
@@ -170,25 +203,15 @@ setLoading(true);
 
 
 
-const res = await fetch(
+const res = await API.post(
 
-"http://localhost:8000/interview/analyze",
+"/interview/analyze",
 
 {
 
-method:"POST",
+answer:answer,
 
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify({
-
-answer,
-
-role
-
-})
+role:role
 
 }
 
@@ -196,23 +219,20 @@ role
 
 
 
-const data = await res.json();
-
-
-setFeedback(data);
+setFeedback(res.data);
 
 
 }
 
 
-catch(error){
+catch(err){
 
-console.log(error);
+console.log(err);
 
 alert("AI feedback failed");
 
-
 }
+
 
 finally{
 
@@ -221,6 +241,7 @@ setLoading(false);
 }
 
 
+
 };
 
 
@@ -229,27 +250,79 @@ setLoading(false);
 
 
 
-// NEXT / FINISH
+// NEXT QUESTION
 
 const nextQuestion = ()=>{
 
-if(current === questions.length - 1){
 
-  setCompleted(true);
-  setStarted(false);
+if(current === questions.length-1){
 
-  return;
+
+setCompleted(true);
+
+setStarted(false);
+
+
+return;
+
 
 }
 
 
-setCurrent(prev=>prev+1);
+
+setCurrent(current+1);
 
 setAnswer("");
 
 setFeedback(null);
 
+
 };
+
+
+
+
+
+
+// SAVE HISTORY
+
+
+const saveHistory = async()=>{
+
+
+try{
+
+
+await API.post(
+
+"/interview/save-history",
+
+{
+
+role:role,
+
+answer:"Interview completed"
+
+}
+
+);
+
+
+alert("Interview saved");
+
+
+}
+
+
+catch(err){
+
+console.log(err);
+
+}
+
+
+};
+
 
 
 
@@ -261,6 +334,7 @@ return(
 <div className="max-w-6xl mx-auto space-y-8">
 
 
+
 <h1 className="text-3xl font-bold text-white">
 
 AI Interview Simulator 🎙️
@@ -269,19 +343,24 @@ AI Interview Simulator 🎙️
 
 
 
+
+
+
 {
+
 completed ?
 
-<div
 
-className="p-10 rounded-3xl text-center"
+<div className="p-10 rounded-3xl text-center"
 
 style={{
-background:"rgba(255,255,255,.05)",
-border:"1px solid rgba(139,92,246,.3)"
+
+background:"rgba(255,255,255,.05)"
+
 }}
 
 >
+
 
 <h1 className="text-3xl text-white font-bold">
 
@@ -290,14 +369,17 @@ border:"1px solid rgba(139,92,246,.3)"
 </h1>
 
 
+
 <p className="text-slate-400 mt-3">
 
-AI has analyzed your interview performance
+AI analyzed your performance
 
 </p>
 
 
-<div className="text-green-400 text-5xl font-bold mt-6">
+
+
+<div className="text-green-400 text-5xl mt-6 font-bold">
 
 {feedback?.score || 85}%
 
@@ -307,38 +389,7 @@ AI has analyzed your interview performance
 
 <button
 
-onClick={async()=>{
-
-
-await fetch(
-
-"http://localhost:8000/interview/save-history",
-
-{
-
-method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify({
-
-role,
-
-answer:"Interview completed"
-
-})
-
-}
-
-);
-
-
-alert("Interview saved successfully");
-
-
-}}
+onClick={saveHistory}
 
 className="mt-6 px-6 py-3 rounded-xl bg-purple-600 text-white"
 
@@ -347,6 +398,7 @@ className="mt-6 px-6 py-3 rounded-xl bg-purple-600 text-white"
 Save Interview Report
 
 </button>
+
 
 
 </div>
@@ -358,10 +410,7 @@ Save Interview Report
 !started ?
 
 
-
-<div
-
-className="p-8 rounded-3xl"
+<div className="p-8 rounded-3xl"
 
 style={{
 
@@ -370,7 +419,6 @@ background:"rgba(255,255,255,.05)"
 }}
 
 >
-
 
 
 <div className="flex gap-3 mb-6">
@@ -388,7 +436,7 @@ Choose Interview
 
 
 
-<div className="grid md:grid-3 gap-4">
+<div className="grid md:grid-cols-3 gap-4">
 
 
 {
@@ -402,7 +450,7 @@ key={item}
 
 onClick={()=>setRole(item)}
 
-className="p-5 rounded-xl cursor-pointer"
+className="p-5 rounded-xl cursor-pointer text-white"
 
 style={{
 
@@ -423,11 +471,7 @@ role===item
 >
 
 
-<p className="text-white">
-
 {item}
-
-</p>
 
 
 </div>
@@ -466,6 +510,9 @@ Start Interview
 
 
 
+
+
+
 :
 
 
@@ -474,9 +521,7 @@ Start Interview
 
 
 
-<div
-
-className="md:col-span-2 p-8 rounded-3xl"
+<div className="md:col-span-2 p-8 rounded-3xl"
 
 style={{
 
@@ -487,14 +532,14 @@ background:"rgba(255,255,255,.05)"
 >
 
 
-
-<h2 className="text-white font-bold text-xl">
+<h2 className="text-white text-xl font-bold">
 
 <Sparkles className="inline text-purple-400"/>
 
  AI Interviewer
 
 </h2>
+
 
 
 
@@ -515,6 +560,7 @@ Question {current+1}/{questions.length}
 
 
 
+
 <textarea
 
 value={answer}
@@ -524,6 +570,8 @@ onChange={(e)=>setAnswer(e.target.value)}
 className="mt-6 w-full h-32 rounded-xl p-4 bg-black/30 text-white"
 
 />
+
+
 
 
 
@@ -541,19 +589,7 @@ className="px-5 py-3 rounded-xl bg-purple-600 text-white flex gap-2"
 
 <Mic/>
 
-{
-
-listening
-
-?
-
-"Listening..."
-
-:
-
-"Speak"
-
-}
+{listening?"Listening...":"Speak"}
 
 
 </button>
@@ -570,22 +606,11 @@ className="px-5 py-3 rounded-xl bg-green-600 text-white"
 >
 
 
-{
-
-loading
-
-?
-
-"AI Checking..."
-
-:
-
-"Submit"
-
-}
+{loading?"AI Checking...":"Submit"}
 
 
 </button>
+
 
 
 </div>
@@ -593,9 +618,11 @@ loading
 
 
 
+
 {
 
 feedback &&
+
 
 <button
 
@@ -606,19 +633,7 @@ className="mt-5 px-5 py-3 rounded-xl bg-blue-600 text-white"
 >
 
 
-{
-
-current === questions.length-1
-
-?
-
-"Finish Interview 🎉"
-
-:
-
-"Next Question →"
-
-}
+Next Question →
 
 
 </button>
@@ -629,16 +644,14 @@ current === questions.length-1
 
 
 
+
 </div>
 
 
 
 
 
-
-<div
-
-className="p-6 rounded-3xl"
+<div className="p-6 rounded-3xl"
 
 style={{
 
@@ -661,32 +674,13 @@ AI Feedback ✨
 
 feedback ?
 
-<div className="mt-5 text-slate-300">
+<p className="text-slate-300 mt-5">
 
+📊 {feedback.score}% <br/>
 
-<p>
-
-📊 Score:
-
-<span className="text-green-400 font-bold ml-2">
-
-{feedback.score}%
-
-</span>
-
+{feedback.feedback}
 
 </p>
-
-
-<p className="mt-3">
-
-✨ {feedback.feedback}
-
-</p>
-
-
-</div>
-
 
 :
 
@@ -703,92 +697,6 @@ Submit answer to get feedback
 
 </div>
 
-
-
-</div>
-
-
-}
-
-
-
-{
-
-completed &&
-
-
-<div
-
-className="p-10 rounded-3xl text-center"
-
-style={{
-
-background:"rgba(255,255,255,.05)"
-
-}}
-
->
-
-
-<h1 className="text-3xl text-white font-bold">
-
-🎉 Interview Completed
-
-</h1>
-
-
-<p className="text-slate-400 mt-3">
-
-AI analyzed your performance
-
-</p>
-
-
-
-<button
-
-onClick={async()=>{
-
-
-await fetch(
-
-"http://localhost:8000/interview/save-history",
-
-{
-
-method:"POST",
-
-headers:{
-
-"Content-Type":"application/json"
-
-},
-
-body:JSON.stringify({
-
-role,
-
-answer:"completed"
-
-})
-
-}
-
-);
-
-
-alert("Interview saved");
-
-
-}}
-
-className="mt-6 px-6 py-3 rounded-xl bg-purple-600 text-white"
-
->
-
-Save Interview Report
-
-</button>
 
 
 

@@ -1,39 +1,91 @@
 import {useState} from "react";
-import axios from "axios";
 import {useNavigate} from "react-router-dom";
+import {motion} from "framer-motion";
+import {LogIn} from "lucide-react";
+import API from "@/api";
 
 
 export default function Login(){
 
+
 const navigate = useNavigate();
 
 
-const [email,setEmail] = useState("");
-const [password,setPassword] = useState("");
+const [email,setEmail]=useState("");
+
+const [password,setPassword]=useState("");
+
+const [loading,setLoading]=useState(false);
+
+
 
 
 
 const login = async()=>{
 
+
+if(!email || !password){
+
+alert("Enter email and password");
+
+return;
+
+}
+
+
+
 try{
 
 
-const res = await axios.post(
+setLoading(true);
 
-"http://localhost:8000/auth/login",
+
+
+const res = await API.post(
+
+"/auth/login",
 
 {
+
 email,
+
 password
+
 }
 
 );
 
 
+
+
+
+// save user details
+
 localStorage.setItem(
+
 "user",
+
 JSON.stringify(res.data.user)
+
 );
+
+
+
+
+// if backend gives token
+
+if(res.data.token){
+
+localStorage.setItem(
+
+"token",
+
+res.data.token
+
+);
+
+}
+
 
 
 
@@ -45,42 +97,113 @@ navigate("/dashboard");
 
 catch(err){
 
+
+console.log(err);
+
+
 alert(
-err.response?.data?.detail || 
+
+err.response?.data?.detail ||
+
 "Login failed"
+
 );
 
+
 }
+
+
+finally{
+
+
+setLoading(false);
+
+
+}
+
 
 
 };
 
 
 
+
+
+
+
 return(
+
+
 
 <div className="min-h-screen flex items-center justify-center">
 
 
-<div className="w-96 p-8 rounded-3xl bg-white/10">
 
 
-<h1 className="text-3xl text-white font-bold mb-6">
+
+<motion.div
+
+initial={{
+opacity:0,
+y:30
+}}
+
+animate={{
+opacity:1,
+y:0
+}}
+
+className="w-96 p-8 rounded-3xl"
+
+style={{
+
+background:"rgba(255,255,255,.08)",
+
+border:"1px solid rgba(255,255,255,.1)"
+
+}}
+
+>
+
+
+
+
+
+<h1 className="text-3xl font-bold text-white mb-2">
 
 NextHire AI 🚀
 
 </h1>
 
 
+
+<p className="text-slate-400 mb-6">
+
+Login to continue your AI career journey
+
+</p>
+
+
+
+
+
+
+
 <input
 
 placeholder="Email"
 
-className="w-full p-3 mb-4 rounded-xl bg-slate-800 text-white"
+value={email}
 
 onChange={(e)=>setEmail(e.target.value)}
 
+className="w-full p-3 mb-4 rounded-xl bg-slate-800 text-white outline-none"
+
 />
+
+
+
+
 
 
 
@@ -90,11 +213,17 @@ type="password"
 
 placeholder="Password"
 
-className="w-full p-3 mb-5 rounded-xl bg-slate-800 text-white"
+value={password}
 
 onChange={(e)=>setPassword(e.target.value)}
 
+className="w-full p-3 mb-5 rounded-xl bg-slate-800 text-white outline-none"
+
 />
+
+
+
+
 
 
 
@@ -102,18 +231,44 @@ onChange={(e)=>setPassword(e.target.value)}
 
 onClick={login}
 
-className="w-full p-3 rounded-xl text-white"
+className="w-full p-3 rounded-xl text-white flex justify-center gap-2 items-center"
 
 style={{
+
 background:
+
 "linear-gradient(135deg,#7c3aed,#2563eb)"
+
 }}
 
 >
 
-Login
+
+<LogIn size={18}/>
+
+
+{
+
+loading
+
+?
+
+"Logging in..."
+
+:
+
+"Login"
+
+}
+
+
 
 </button>
+
+
+
+
+
 
 
 
@@ -125,13 +280,15 @@ Don't have an account?
 
 <span
 
-className="text-purple-400 cursor-pointer ml-2"
-
 onClick={()=>navigate("/register")}
+
+className="text-purple-400 cursor-pointer ml-2"
 
 >
 
+
 Register
+
 
 </span>
 
@@ -139,11 +296,21 @@ Register
 </p>
 
 
-</div>
+
+
+
+</motion.div>
+
+
+
+
 
 
 </div>
+
+
 
 )
+
 
 }

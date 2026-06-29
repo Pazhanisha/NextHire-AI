@@ -10,16 +10,20 @@ CheckCircle
 
 import {motion} from "framer-motion";
 import {useState,useEffect} from "react";
-import axios from "axios";
+import API from "@/api";
+
 
 
 export default function Profile(){
 
 
-const [editing,setEditing] = useState(false);
+const [editing,setEditing]=useState(false);
+
+const [skills,setSkills]=useState([]);
 
 
-const [user,setUser] = useState({
+
+const [user,setUser]=useState({
 
 full_name:"",
 email:"",
@@ -34,13 +38,15 @@ interviewScore:82
 });
 
 
-const [skills,setSkills] = useState([]);
+
 
 
 
 useEffect(()=>{
 
+
 loadProfile();
+
 
 },[]);
 
@@ -48,30 +54,61 @@ loadProfile();
 
 
 
-const loadProfile = async()=>{
+
+const loadProfile=async()=>{
 
 
 try{
 
 
-const res = await axios.get(
+// get logged user
 
-"http://localhost:8000/profile/"
+const storedUser =
+localStorage.getItem("user");
 
+
+
+if(storedUser){
+
+
+const userData =
+JSON.parse(storedUser);
+
+
+
+setUser(prev=>({
+
+...prev,
+
+full_name:userData.name || userData.full_name,
+
+email:userData.email
+
+}));
+
+
+
+}
+
+
+
+
+
+
+const res = await API.get(
+"/profile/"
 );
 
 
 
-if(res.data.full_name){
+setUser(prev=>({
 
-
-setUser({
-
-...user,
+...prev,
 
 ...res.data
 
-});
+}));
+
 
 
 setSkills(
@@ -80,8 +117,6 @@ res.data.skills || []
 
 );
 
-
-}
 
 
 }
@@ -93,21 +128,25 @@ console.log(err);
 }
 
 
-}
+};
 
 
 
 
 
-const saveProfile = async()=>{
+
+
+
+
+const saveProfile=async()=>{
 
 
 try{
 
 
-await axios.post(
+await API.post(
 
-"http://localhost:8000/profile/save",
+"/profile/save",
 
 {
 
@@ -120,8 +159,24 @@ role:user.role,
 
 skills:skills
 
-
 }
+
+
+);
+
+
+
+localStorage.setItem(
+
+"user",
+
+JSON.stringify({
+
+name:user.full_name,
+
+email:user.email
+
+})
 
 );
 
@@ -130,10 +185,15 @@ skills:skills
 setEditing(false);
 
 
-alert("Profile saved successfully");
+
+alert(
+"Profile updated successfully"
+);
+
 
 
 }
+
 
 catch(err){
 
@@ -144,7 +204,12 @@ alert("Save failed");
 }
 
 
-}
+
+};
+
+
+
+
 
 
 
@@ -157,11 +222,20 @@ return(
 
 
 
+
+
+
 <motion.div
 
-initial={{opacity:0,y:20}}
+initial={{
+opacity:0,
+y:20
+}}
 
-animate={{opacity:1,y:0}}
+animate={{
+opacity:1,
+y:0
+}}
 
 >
 
@@ -188,7 +262,6 @@ Manage your AI career profile
 
 
 
-{/* HEADER */}
 
 
 
@@ -207,10 +280,14 @@ background:
 >
 
 
-<div className="flex items-center justify-between">
+
+<div className="flex justify-between items-center">
 
 
-<div className="flex items-center gap-5">
+
+
+
+<div className="flex gap-5 items-center">
 
 
 <div
@@ -227,12 +304,11 @@ background:
 
 >
 
-
 <User
 
-className="text-white"
-
 size={40}
+
+className="text-white"
 
 />
 
@@ -246,11 +322,12 @@ size={40}
 <div>
 
 
-<h2 className="text-2xl font-bold text-white">
+<h2 className="text-white text-2xl font-bold">
 
-{user.full_name || "Your Name"}
+{user.full_name || "User"}
 
 </h2>
+
 
 
 <p className="text-slate-300">
@@ -260,12 +337,16 @@ size={40}
 </p>
 
 
-<div className="flex items-center gap-2 text-slate-400 mt-2">
 
+<div className="flex gap-2 items-center text-slate-400 mt-2">
 
 <Mail size={16}/>
 
-{user.email || "Email"}
+{user.email}
+
+
+</div>
+
 
 
 </div>
@@ -274,7 +355,6 @@ size={40}
 </div>
 
 
-</div>
 
 
 
@@ -283,7 +363,6 @@ size={40}
 
 
 <button
-
 
 onClick={()=>{
 
@@ -301,9 +380,7 @@ setEditing(true)
 
 }}
 
-
-className="flex gap-2 items-center px-5 py-3 rounded-xl text-white"
-
+className="px-5 py-3 rounded-xl text-white flex gap-2"
 
 style={{
 
@@ -323,12 +400,11 @@ editing
 
 ?
 
-"Save Profile"
+"Save"
 
 :
 
-"Edit Profile"
-
+"Edit"
 
 }
 
@@ -337,10 +413,19 @@ editing
 
 
 
+
+
+
 </div>
 
 
+
 </div>
+
+
+
+
+
 
 
 
@@ -350,7 +435,8 @@ editing
 
 {
 
-editing && (
+editing &&
+
 
 
 <div
@@ -366,20 +452,20 @@ background:"rgba(255,255,255,.05)"
 >
 
 
-<h2 className="text-white text-xl font-bold mb-4">
 
-Edit Information
+<h2 className="text-white text-xl font-bold mb-5">
+
+Edit Profile
 
 </h2>
 
 
 
 
+
 <input
 
-
 value={user.full_name}
-
 
 onChange={(e)=>
 
@@ -393,11 +479,7 @@ full_name:e.target.value
 
 }
 
-
 className="w-full p-3 rounded-xl bg-white/10 text-white mb-3"
-
-
-placeholder="Name"
 
 />
 
@@ -405,12 +487,9 @@ placeholder="Name"
 
 
 
-
 <input
 
-
 value={user.email}
-
 
 onChange={(e)=>
 
@@ -424,11 +503,7 @@ email:e.target.value
 
 }
 
-
 className="w-full p-3 rounded-xl bg-white/10 text-white mb-3"
-
-
-placeholder="Email"
 
 />
 
@@ -436,12 +511,9 @@ placeholder="Email"
 
 
 
-
 <input
 
-
 value={user.role}
-
 
 onChange={(e)=>
 
@@ -455,11 +527,7 @@ role:e.target.value
 
 }
 
-
 className="w-full p-3 rounded-xl bg-white/10 text-white"
-
-
-placeholder="Role"
 
 />
 
@@ -468,7 +536,6 @@ placeholder="Role"
 </div>
 
 
-)
 
 }
 
@@ -480,11 +547,7 @@ placeholder="Role"
 
 
 
-{/* STATS */}
-
-
-
-<div className="grid md:grid-cols-3 gap-6">
+<div className="grid md:grid-cols-3 gap-5">
 
 
 
@@ -492,11 +555,13 @@ placeholder="Role"
 
 icon={<FileText/>}
 
-title="Resume Status"
+title="Resume"
 
 value={user.resume}
 
 />
+
+
 
 
 
@@ -512,6 +577,8 @@ value={`${user.interviewScore}%`}
 
 
 
+
+
 <Card
 
 icon={<Target/>}
@@ -524,6 +591,7 @@ value={`${user.careerScore}%`}
 
 
 
+
 </div>
 
 
@@ -531,10 +599,6 @@ value={`${user.careerScore}%`}
 
 
 
-
-
-
-{/* SKILLS */}
 
 
 
@@ -551,7 +615,6 @@ background:"rgba(255,255,255,.05)"
 >
 
 
-
 <h2 className="text-white text-xl font-bold">
 
 Technical Skills 💻
@@ -560,13 +623,15 @@ Technical Skills 💻
 
 
 
+
+
 <div className="flex flex-wrap gap-3 mt-5">
 
 
 {
 
-
 skills.map((skill,index)=>(
+
 
 
 <span
@@ -574,7 +639,6 @@ skills.map((skill,index)=>(
 key={index}
 
 className="px-4 py-2 rounded-xl text-purple-200"
-
 
 style={{
 
@@ -600,6 +664,7 @@ className="inline mr-2"
 </span>
 
 
+
 ))
 
 
@@ -607,11 +672,13 @@ className="inline mr-2"
 
 
 
-</div>
-
-
 
 </div>
+
+
+
+</div>
+
 
 
 
@@ -624,8 +691,10 @@ className="inline mr-2"
 
 )
 
-
 }
+
+
+
 
 
 
@@ -641,7 +710,6 @@ return(
 
 className="p-6 rounded-3xl"
 
-
 style={{
 
 background:"rgba(255,255,255,.05)",
@@ -649,7 +717,6 @@ background:"rgba(255,255,255,.05)",
 border:"1px solid rgba(255,255,255,.1)"
 
 }}
-
 
 >
 
@@ -661,7 +728,6 @@ border:"1px solid rgba(255,255,255,.1)"
 </div>
 
 
-
 <p className="text-slate-400 mt-4">
 
 {title}
@@ -670,17 +736,17 @@ border:"1px solid rgba(255,255,255,.1)"
 
 
 
-<h2 className="text-white text-xl font-bold mt-2">
+<h2 className="text-white text-2xl font-bold mt-2">
 
 {value}
 
 </h2>
 
 
+
 </div>
 
 
 )
-
 
 }

@@ -1,17 +1,23 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { motion } from "framer-motion";
 import {
   Plus,
   Trash2,
-  Briefcase
+  Briefcase,
+  MapPin,
+  Building2
 } from "lucide-react";
+
+import API from "@/api";
+
 
 
 export default function SavedJobs(){
 
 
 const [jobs,setJobs]=useState([]);
+
+const [loading,setLoading]=useState(false);
 
 
 const [job,setJob]=useState({
@@ -21,6 +27,7 @@ role:"",
 location:""
 
 });
+
 
 
 
@@ -36,20 +43,28 @@ loadJobs();
 
 
 
+
+
+
 const loadJobs=async()=>{
 
 
 try{
 
 
-const res=await axios.get(
+setLoading(true);
 
-"http://localhost:8000/jobs/"
+
+const res = await API.get(
+
+"/jobs/"
 
 );
 
 
+
 setJobs(res.data);
+
 
 
 }
@@ -61,7 +76,19 @@ console.log(err);
 }
 
 
+
+finally{
+
+setLoading(false);
+
+}
+
+
+
 };
+
+
+
 
 
 
@@ -72,12 +99,22 @@ console.log(err);
 const addJob=async()=>{
 
 
+if(!job.company || !job.role){
+
+alert("Enter company and role");
+
+return;
+
+}
+
+
+
 try{
 
 
-await axios.post(
+await API.post(
 
-"http://localhost:8000/jobs/add",
+"/jobs/add",
 
 job
 
@@ -97,6 +134,47 @@ location:""
 loadJobs();
 
 
+}
+
+
+catch(err){
+
+console.log(err);
+
+alert("Failed to add job");
+
+}
+
+
+
+};
+
+
+
+
+
+
+
+
+
+
+const deleteJob=async(id)=>{
+
+
+try{
+
+
+await API.delete(
+
+`/jobs/${id}`
+
+);
+
+
+
+loadJobs();
+
+
 
 }
 
@@ -116,25 +194,6 @@ console.log(err);
 
 
 
-const deleteJob=async(id)=>{
-
-
-await axios.delete(
-
-`http://localhost:8000/jobs/${id}`
-
-);
-
-
-loadJobs();
-
-
-};
-
-
-
-
-
 
 
 return(
@@ -148,9 +207,15 @@ return(
 
 <motion.div
 
-initial={{opacity:0,y:20}}
+initial={{
+opacity:0,
+y:20
+}}
 
-animate={{opacity:1,y:0}}
+animate={{
+opacity:1,
+y:0
+}}
 
 >
 
@@ -162,14 +227,18 @@ Saved Jobs 💼
 </h1>
 
 
+
 <p className="text-slate-400 mt-2">
 
-Manage your career opportunities
+Track your career opportunities
 
 </p>
 
 
+
 </motion.div>
+
+
 
 
 
@@ -186,23 +255,28 @@ className="p-8 rounded-3xl"
 
 style={{
 
-background:"rgba(255,255,255,.05)"
+background:"rgba(255,255,255,.05)",
+
+border:"1px solid rgba(255,255,255,.08)"
 
 }}
 
 >
 
 
+<h2 className="text-white text-xl font-bold mb-6">
 
-<h2 className="text-white text-xl font-bold mb-5">
-
-Add Job
+Add New Opportunity 🚀
 
 </h2>
 
 
 
+
 <div className="grid md:grid-cols-4 gap-4">
+
+
+
 
 
 <input
@@ -213,13 +287,22 @@ value={job.company}
 
 onChange={(e)=>
 
-setJob({...job,company:e.target.value})
+setJob({
+
+...job,
+
+company:e.target.value
+
+})
 
 }
 
-className="p-3 rounded-xl bg-slate-800 text-white"
+className="p-3 rounded-xl bg-slate-900 text-white outline-none"
 
 />
+
+
+
 
 
 
@@ -227,19 +310,28 @@ className="p-3 rounded-xl bg-slate-800 text-white"
 
 <input
 
-placeholder="Role"
+placeholder="Job Role"
 
 value={job.role}
 
 onChange={(e)=>
 
-setJob({...job,role:e.target.value})
+setJob({
+
+...job,
+
+role:e.target.value
+
+})
 
 }
 
-className="p-3 rounded-xl bg-slate-800 text-white"
+className="p-3 rounded-xl bg-slate-900 text-white outline-none"
 
 />
+
+
+
 
 
 
@@ -253,13 +345,23 @@ value={job.location}
 
 onChange={(e)=>
 
-setJob({...job,location:e.target.value})
+setJob({
+
+...job,
+
+location:e.target.value
+
+})
 
 }
 
-className="p-3 rounded-xl bg-slate-800 text-white"
+className="p-3 rounded-xl bg-slate-900 text-white outline-none"
 
 />
+
+
+
+
 
 
 
@@ -269,11 +371,12 @@ className="p-3 rounded-xl bg-slate-800 text-white"
 
 onClick={addJob}
 
-className="flex items-center justify-center gap-2 rounded-xl text-white"
+className="flex items-center justify-center gap-2 rounded-xl text-white font-semibold"
 
 style={{
 
 background:
+
 "linear-gradient(135deg,#7c3aed,#2563eb)"
 
 }}
@@ -283,12 +386,15 @@ background:
 
 <Plus size={18}/>
 
-Add
+Add Job
 
 
 </button>
 
 
+
+
+
 </div>
 
 
@@ -299,31 +405,80 @@ Add
 
 
 
+
+
+
+
+
+
+
+
+{
+
+loading ?
+
+<p className="text-white">
+
+Loading jobs...
+
+</p>
+
+
+:
 
 
 
 <div className="grid md:grid-cols-2 gap-6">
 
 
+
 {
+
 
 jobs.map((item)=>(
 
 
 
-<div
+<motion.div
+
 
 key={item.id}
 
+
+initial={{
+
+opacity:0,
+
+scale:.95
+
+}}
+
+
+animate={{
+
+opacity:1,
+
+scale:1
+
+}}
+
+
+
 className="p-6 rounded-3xl"
+
 
 style={{
 
+
 background:"rgba(255,255,255,.05)",
+
 
 border:"1px solid rgba(255,255,255,.1)"
 
+
 }}
+
+
 
 >
 
@@ -333,40 +488,84 @@ border:"1px solid rgba(255,255,255,.1)"
 
 
 
-<div className="flex gap-3">
 
 
-<Briefcase className="text-purple-400"/>
+<div className="flex gap-4">
+
+
+<div className="p-3 rounded-xl bg-purple-600">
+
+
+<Briefcase className="text-white"/>
+
+
+</div>
+
+
+
+
+
 
 
 <div>
 
 
+
 <h2 className="text-white text-xl font-bold">
 
+
 {item.role}
+
 
 </h2>
 
 
-<p className="text-slate-400">
+
+
+
+<div className="flex gap-2 text-slate-400 mt-2">
+
+
+<Building2 size={16}/>
+
 
 {item.company}
 
-</p>
-
-
-<p className="text-slate-500">
-
-{item.location}
-
-</p>
 
 
 </div>
 
 
+
+
+
+
+
+<div className="flex gap-2 text-slate-500 mt-1">
+
+
+<MapPin size={16}/>
+
+
+{item.location || "Remote"}
+
+
+
 </div>
+
+
+
+
+
+</div>
+
+
+
+
+</div>
+
+
+
 
 
 
@@ -374,9 +573,12 @@ border:"1px solid rgba(255,255,255,.1)"
 
 <button
 
+
 onClick={()=>deleteJob(item.id)}
 
-className="text-red-400"
+
+className="text-red-400 hover:text-red-300"
+
 
 >
 
@@ -388,35 +590,47 @@ className="text-red-400"
 
 
 
+
+
+
 </div>
 
 
-</div>
+
+</motion.div>
 
 
 
 ))
 
 
+
 }
+
 
 
 
 {
 
+
 jobs.length===0 &&
 
-<p className="text-slate-400">
+<div className="text-slate-400">
 
-No saved jobs yet
+No saved jobs yet. Add your first opportunity 🚀
 
-</p>
+</div>
 
 
 }
 
 
+
 </div>
+
+
+
+}
 
 
 
@@ -428,5 +642,6 @@ No saved jobs yet
 
 
 )
+
 
 }

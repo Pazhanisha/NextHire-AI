@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { motion } from "framer-motion";
 
 import {
@@ -9,25 +8,20 @@ import {
   CheckCircle
 } from "lucide-react";
 
+import API from "@/api";
+
 
 
 export default function SkillTracker(){
 
 
-const [skills,setSkills] = useState([]);
+const [skills,setSkills]=useState([]);
 
+const [newSkill,setNewSkill]=useState("");
 
-const [newSkill,setNewSkill] = useState("");
+const [level,setLevel]=useState("Beginner");
 
-
-
-const [level,setLevel] = useState(
-"Beginner"
-);
-
-
-
-const [progress,setProgress] = useState(0);
+const [progress,setProgress]=useState(0);
 
 
 
@@ -35,9 +29,7 @@ const [progress,setProgress] = useState(0);
 
 useEffect(()=>{
 
-
 loadSkills();
-
 
 },[]);
 
@@ -46,31 +38,30 @@ loadSkills();
 
 
 
+// LOAD SKILLS
+
 const loadSkills = async()=>{
 
 
 try{
 
 
-const res = await axios.get(
-
-"http://localhost:8000/skills/"
-
+const res = await API.get(
+"/skills/"
 );
 
 
 setSkills(res.data);
 
 
-
 }
+
 
 catch(err){
 
 console.log(err);
 
 }
-
 
 
 };
@@ -82,30 +73,36 @@ console.log(err);
 
 
 
+
+// ADD SKILL
+
 const addSkill = async()=>{
 
 
-if(!newSkill)
+if(!newSkill){
+
+alert("Enter skill name");
+
 return;
+
+}
 
 
 
 try{
 
 
-await axios.post(
+await API.post(
 
-"http://localhost:8000/skills/add",
+"/skills/add",
 
 {
 
-
 name:newSkill,
 
-level:level,
+level,
 
 progress:Number(progress)
-
 
 }
 
@@ -115,7 +112,10 @@ progress:Number(progress)
 
 setNewSkill("");
 
+setLevel("Beginner");
+
 setProgress(0);
+
 
 
 loadSkills();
@@ -127,6 +127,8 @@ loadSkills();
 catch(err){
 
 console.log(err);
+
+alert("Failed to add skill");
 
 }
 
@@ -140,17 +142,20 @@ console.log(err);
 
 
 
+// DELETE SKILL
+
 const deleteSkill = async(id)=>{
 
 
 try{
 
 
-await axios.delete(
+await API.delete(
 
-`http://localhost:8000/skills/${id}`
+`/skills/${id}`
 
 );
+
 
 
 loadSkills();
@@ -215,6 +220,7 @@ Track your career skill growth
 </p>
 
 
+
 </motion.div>
 
 
@@ -225,21 +231,26 @@ Track your career skill growth
 
 
 
+{/* ADD SKILL */}
+
+
+
 <div
 
 className="p-8 rounded-3xl"
 
 style={{
 
-background:"rgba(255,255,255,.05)"
+background:"rgba(255,255,255,.05)",
+
+border:"1px solid rgba(255,255,255,.08)"
 
 }}
 
 >
 
 
-
-<h2 className="text-white text-xl font-bold mb-5">
+<h2 className="text-white text-xl font-bold mb-6">
 
 Add New Skill
 
@@ -249,6 +260,8 @@ Add New Skill
 
 
 <div className="grid md:grid-cols-4 gap-4">
+
+
 
 
 
@@ -270,6 +283,8 @@ className="p-3 rounded-xl bg-slate-800 text-white"
 
 
 
+
+
 <select
 
 value={level}
@@ -283,28 +298,15 @@ className="p-3 rounded-xl bg-slate-800 text-white"
 >
 
 
-<option>
+<option>Beginner</option>
 
-Beginner
+<option>Intermediate</option>
 
-</option>
-
-
-<option>
-
-Intermediate
-
-</option>
-
-
-<option>
-
-Advanced
-
-</option>
+<option>Advanced</option>
 
 
 </select>
+
 
 
 
@@ -337,11 +339,12 @@ className="p-3 rounded-xl bg-slate-800 text-white"
 
 onClick={addSkill}
 
-className="flex items-center justify-center gap-2 rounded-xl text-white"
+className="flex justify-center items-center gap-2 rounded-xl text-white"
 
 style={{
 
 background:
+
 "linear-gradient(135deg,#7c3aed,#2563eb)"
 
 }}
@@ -359,17 +362,21 @@ Add
 
 
 
-
-</div>
-
-
 </div>
 
 
 
+</div>
 
 
 
+
+
+
+
+
+
+{/* SKILLS */}
 
 
 
@@ -379,14 +386,22 @@ Add
 
 {
 
-
 skills.map(skill=>(
 
 
-
-<div
+<motion.div
 
 key={skill.id}
+
+initial={{
+opacity:0,
+y:20
+}}
+
+animate={{
+opacity:1,
+y:0
+}}
 
 className="p-6 rounded-3xl"
 
@@ -394,8 +409,7 @@ style={{
 
 background:"rgba(255,255,255,.05)",
 
-border:
-"1px solid rgba(255,255,255,.08)"
+border:"1px solid rgba(255,255,255,.08)"
 
 }}
 
@@ -404,7 +418,10 @@ border:
 
 
 
+
 <div className="flex justify-between">
+
+
 
 
 
@@ -416,6 +433,7 @@ border:
 <Brain/>
 
 </div>
+
 
 
 
@@ -440,7 +458,9 @@ border:
 
 
 
+
 </div>
+
 
 
 
@@ -458,7 +478,11 @@ className="text-red-400"
 
 <Trash2/>
 
+
 </button>
+
+
+
 
 
 
@@ -470,7 +494,9 @@ className="text-red-400"
 
 
 
-<div className="mt-5">
+
+<div className="mt-6">
+
 
 
 <div className="h-3 bg-white/10 rounded-full">
@@ -485,6 +511,7 @@ style={{
 width:`${skill.progress}%`,
 
 background:
+
 "linear-gradient(90deg,#7c3aed,#2563eb)"
 
 }}
@@ -493,6 +520,7 @@ background:
 
 
 </div>
+
 
 
 
@@ -511,7 +539,9 @@ background:
 
 
 
-<div className="mt-4 text-green-400 flex gap-2 items-center">
+
+
+<div className="mt-4 flex gap-2 items-center text-green-400">
 
 
 <CheckCircle size={16}/>
@@ -524,7 +554,9 @@ Tracked
 
 
 
-</div>
+
+
+</motion.div>
 
 
 
@@ -532,6 +564,9 @@ Tracked
 
 
 }
+
+
+
 
 
 
@@ -546,7 +581,9 @@ No skills added yet
 
 </p>
 
+
 }
+
 
 
 

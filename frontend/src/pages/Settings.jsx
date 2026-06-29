@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import API from "@/api";
 import { motion } from "framer-motion";
 
 import {
@@ -79,11 +79,9 @@ const loadSettings = async()=>{
 try{
 
 
-const res = await axios.get(
+const res = await API.get("/settings/")
 
-"http://localhost:8000/settings/"
 
-);
 
 
 
@@ -165,12 +163,9 @@ const saveSettings = async()=>{
 try{
 
 
-await axios.post(
-
-"http://localhost:8000/settings/save",
-
-settings
-
+await API.post(
+  "/settings/save",
+  settings
 );
 
 

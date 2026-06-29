@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import API from "@/api";
 import { motion } from "framer-motion";
 
 import {
@@ -36,9 +36,9 @@ const loadAnalytics=async()=>{
 try{
 
 
-const res = await axios.get(
+const res = await API.get(
 
-"http://localhost:8000/analytics/"
+"/analytics/"
 
 );
 

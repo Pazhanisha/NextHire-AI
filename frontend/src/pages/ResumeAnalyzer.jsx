@@ -1,41 +1,48 @@
 import { motion } from "framer-motion";
-import { UploadCloud, Sparkles, FileText, Download } from "lucide-react";
-import axios from "axios";
-import { useState } from "react";
+import {
+UploadCloud,
+Sparkles,
+FileText,
+Download,
+CheckCircle
+} from "lucide-react";
+
+import {useState} from "react";
 import jsPDF from "jspdf";
-
-
-export default function ResumeAnalyzer() {
-
-
-console.log("RESUME PAGE LOADED");
-
-
-const [file,setFile] = useState(null);
-const [result,setResult] = useState(null);
-const [loading,setLoading] = useState(false);
+import API from "@/api";
 
 
 
+export default function ResumeAnalyzer(){
 
 
-// DOWNLOAD REPORT
+const [file,setFile]=useState(null);
 
-const downloadReport = ()=>{
+const [result,setResult]=useState(null);
+
+const [loading,setLoading]=useState(false);
+
+
+
+
+
+// DOWNLOAD PDF
+
+const downloadReport=()=>{
 
 
 if(!result) return;
 
 
 
-const pdf = new jsPDF();
+const pdf=new jsPDF();
 
 
 
 pdf.setFontSize(18);
 
 pdf.text(
-"NextHire AI - Resume Analysis Report",
+"NextHire AI Resume Analysis Report",
 20,
 20
 );
@@ -46,33 +53,33 @@ pdf.setFontSize(12);
 
 
 pdf.text(
-`Resume Score: ${result.score}%`,
+`Resume Score : ${result.score}%`,
 20,
-40
+45
 );
 
 
 
 pdf.text(
-`Feedback: ${result.feedback}`,
+`Strength : ${result.strength}`,
 20,
-60
+65
 );
 
 
 
 pdf.text(
-`Strength: ${result.strength}`,
+`Improvement : ${result.improvement}`,
 20,
-80
+85
 );
 
 
 
 pdf.text(
-`Improvement: ${result.improvement}`,
+`Feedback : ${result.feedback}`,
 20,
-100
+105
 );
 
 
@@ -91,15 +98,16 @@ pdf.save(
 
 
 
-// UPLOAD RESUME
+
+// UPLOAD
 
 
-const uploadResume = async()=>{
+const uploadResume=async()=>{
 
 
 if(!file){
 
-alert("Please select resume");
+alert("Please select resume PDF");
 
 return;
 
@@ -107,7 +115,7 @@ return;
 
 
 
-const formData = new FormData();
+const formData=new FormData();
 
 
 formData.append(
@@ -124,9 +132,9 @@ setLoading(true);
 
 
 
-const response = await axios.post(
+const res = await API.post(
 
-"http://localhost:8000/resume/upload-resume",
+"/resume/upload-resume",
 
 formData,
 
@@ -144,44 +152,77 @@ headers:{
 
 
 
-console.log(
-"API RESPONSE:",
-response.data
-);
+
+const data =
+
+res.data.analysis ||
+
+res.data;
 
 
-
-const data = response.data.analysis || response.data;
 
 
 setResult({
 
-score: data.score || data.resume_score,
 
-feedback: data.feedback || data.career_fit,
+score:
 
-strength: data.strength || data.strengths?.[0],
+data.score ||
 
-improvement: data.improvement || data.improvements?.[0]
+data.resume_score ||
+
+0,
+
+
+
+strength:
+
+data.strength ||
+
+data.strengths?.[0] ||
+
+"Good technical background",
+
+
+
+improvement:
+
+data.improvement ||
+
+data.improvements?.[0] ||
+
+"Improve projects and skills",
+
+
+
+feedback:
+
+data.feedback ||
+
+data.career_fit ||
+
+"Resume analyzed successfully"
 
 });
 
 
+
 }
 
 
-catch(error){
+catch(err){
 
 
-console.log(
-error.response?.data || error.message
+console.log(err);
+
+
+alert(
+"Resume analysis failed"
 );
 
 
-alert("Upload failed");
-
-
 }
+
 
 
 finally{
@@ -211,16 +252,24 @@ return(
 
 
 
+
+
 <motion.div
 
-initial={{opacity:0,y:20}}
+initial={{
+opacity:0,
+y:20
+}}
 
-animate={{opacity:1,y:0}}
+animate={{
+opacity:1,
+y:0
+}}
 
 >
 
 
-<h1 className="text-3xl font-bold text-white">
+<h1 className="text-4xl font-bold text-white">
 
 AI Resume Analyzer ✨
 
@@ -229,7 +278,7 @@ AI Resume Analyzer ✨
 
 <p className="text-slate-400 mt-2">
 
-Upload your resume and get AI career insights.
+Get AI powered resume feedback and improve your career profile.
 
 </p>
 
@@ -243,15 +292,14 @@ Upload your resume and get AI career insights.
 
 
 
-<motion.div
 
-whileHover={{scale:1.02}}
+<div
 
-className="rounded-3xl p-10 flex flex-col items-center text-center"
+className="p-10 rounded-3xl text-center"
 
 style={{
 
-background:"rgba(255,255,255,0.05)",
+background:"rgba(255,255,255,.05)",
 
 border:"1px solid rgba(139,92,246,.3)"
 
@@ -261,10 +309,9 @@ border:"1px solid rgba(139,92,246,.3)"
 
 
 
-
 <div
 
-className="w-20 h-20 rounded-2xl flex items-center justify-center"
+className="mx-auto w-20 h-20 rounded-2xl flex items-center justify-center"
 
 style={{
 
@@ -278,9 +325,9 @@ background:
 
 <UploadCloud
 
-className="text-white"
-
 size={40}
+
+className="text-white"
 
 />
 
@@ -291,8 +338,7 @@ size={40}
 
 
 
-
-<h2 className="text-white text-xl mt-5">
+<h2 className="text-white text-2xl font-bold mt-5">
 
 Upload Resume
 
@@ -301,18 +347,17 @@ Upload Resume
 
 
 
-
-<p className="text-slate-400 mt-2">
+<p className="text-slate-400 mt-3">
 
 {
 
-file ?
+file?
 
 file.name
 
 :
 
-"PDF supported"
+"PDF format supported"
 
 }
 
@@ -323,10 +368,9 @@ file.name
 
 
 
-
 <label
 
-className="mt-6 px-6 py-3 rounded-xl text-white cursor-pointer"
+className="inline-block mt-6 px-6 py-3 rounded-xl text-white cursor-pointer"
 
 style={{
 
@@ -338,7 +382,7 @@ background:
 >
 
 
-Choose File
+Choose PDF
 
 
 
@@ -348,7 +392,7 @@ type="file"
 
 accept=".pdf"
 
-className="hidden"
+hidden
 
 onChange={(e)=>
 
@@ -357,7 +401,6 @@ e.target.files[0]
 )
 
 }
-
 
 />
 
@@ -375,7 +418,7 @@ e.target.files[0]
 
 onClick={uploadResume}
 
-className="mt-5 px-6 py-3 rounded-xl text-white"
+className="ml-4 px-6 py-3 rounded-xl text-white"
 
 style={{
 
@@ -407,8 +450,7 @@ loading
 
 
 
-
-</motion.div>
+</div>
 
 
 
@@ -420,7 +462,7 @@ loading
 
 {
 
-result && (
+result &&
 
 
 <div className="space-y-6">
@@ -432,7 +474,7 @@ result && (
 <div className="flex justify-between items-center">
 
 
-<h2 className="text-3xl text-white font-bold">
+<h2 className="text-3xl font-bold text-white">
 
 AI Resume Insights
 
@@ -441,12 +483,11 @@ AI Resume Insights
 
 
 
-
 <button
 
 onClick={downloadReport}
 
-className="px-5 py-3 rounded-xl text-white flex gap-2"
+className="flex gap-2 px-5 py-3 rounded-xl text-white"
 
 style={{
 
@@ -457,9 +498,10 @@ background:
 
 >
 
+
 <Download size={18}/>
 
-Download Report
+Download
 
 
 </button>
@@ -476,77 +518,37 @@ Download Report
 
 
 
-<div className="grid md:grid-cols-3 gap-6">
+<div className="grid md:grid-cols-3 gap-5">
 
 
 
-<div className="p-6 rounded-3xl bg-white/5">
+<Card
 
-<p className="text-slate-400">
+title="Resume Score"
 
-Resume Score
+value={`${result.score}%`}
 
-</p>
-
-
-<h1 className="text-4xl text-green-400 font-bold mt-3">
-
-{result.score}%
-
-</h1>
-
-
-</div>
+/>
 
 
 
+<Card
+
+title="Strength"
+
+value={result.strength}
+
+/>
 
 
 
-<div className="p-6 rounded-3xl bg-white/5">
+<Card
 
+title="Improvement"
 
-<p className="text-slate-400">
+value={result.improvement}
 
-Strength
-
-</p>
-
-
-<h2 className="text-white mt-3">
-
-{result.strength}
-
-</h2>
-
-
-</div>
-
-
-
-
-
-
-
-
-<div className="p-6 rounded-3xl bg-white/5">
-
-
-<p className="text-slate-400">
-
-Improvement
-
-</p>
-
-
-<h2 className="text-white mt-3">
-
-{result.improvement}
-
-</h2>
-
-
-</div>
+/>
 
 
 
@@ -560,12 +562,26 @@ Improvement
 
 
 
-<div className="p-8 rounded-3xl bg-white/5">
+<div
+
+className="p-8 rounded-3xl"
+
+style={{
+
+background:"rgba(255,255,255,.05)"
+
+}}
+
+>
 
 
-<h2 className="text-white font-bold text-xl">
+<h2 className="text-white text-xl font-bold flex gap-2">
 
-AI Feedback ✨
+
+<CheckCircle className="text-green-400"/>
+
+AI Feedback
+
 
 </h2>
 
@@ -586,14 +602,13 @@ AI Feedback ✨
 
 
 
-
 </div>
 
 
-)
-
 
 }
+
+
 
 
 
@@ -606,11 +621,9 @@ AI Feedback ✨
 
 <Card
 
-icon={<Sparkles/>}
-
 title="AI Score"
 
-text="Resume quality analysis"
+value="Resume Quality"
 
 />
 
@@ -618,29 +631,27 @@ text="Resume quality analysis"
 
 <Card
 
-icon={<FileText/>}
+title="Recruiter Review"
 
-title="AI Review"
-
-text="Recruiter style feedback"
+value="Professional Feedback"
 
 />
 
 
 
 <Card
-
-icon={<Sparkles/>}
 
 title="Career Tips"
 
-text="Improve your profile"
+value="Skill Improvement"
 
 />
+
 
 
 
 </div>
+
 
 
 
@@ -660,45 +671,45 @@ text="Improve your profile"
 
 
 
-
-
-function Card({icon,title,text}){
+function Card({title,value}){
 
 
 return(
 
+
 <div
 
-className="p-6 rounded-2xl bg-white/5"
+className="p-6 rounded-3xl"
+
+style={{
+
+background:"rgba(255,255,255,.05)",
+
+border:"1px solid rgba(255,255,255,.1)"
+
+}}
 
 >
 
 
-<div className="text-purple-400 mb-3">
-
-{icon}
-
-</div>
-
-
-<h3 className="text-white font-semibold">
+<p className="text-slate-400">
 
 {title}
 
-</h3>
-
-
-<p className="text-slate-400 mt-2">
-
-{text}
-
 </p>
 
+
+<h2 className="text-white font-bold text-xl mt-3">
+
+{value}
+
+</h2>
 
 
 </div>
 
 
 )
+
 
 }
